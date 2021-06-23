@@ -1,0 +1,37 @@
+{
+  "name": "farm.manager.account",
+  "version": "1.0.0",
+  "description": "Farm Manager Account Microservice",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon -r dotenv/config"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gerr0r/Farm.Manager.Account.git"
+  },
+  "author": "Gergan Ruschev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gerr0r/Farm.Manager.Account/issues"
+  },
+  "homepage": "https://github.com/gerr0r/Farm.Manager.Account#readme",
+  "dependencies": {
+    "@apollo/federation": "^0.25.1",
+    "apollo-server": "^2.25.1",
+    "apollo-server-express": "^2.25.2",
+    "bcrypt": "^5.0.1",
+    "express": "^4.17.1",
+    "graphql": "^15.5.1",
+    "jsonwebtoken": "^8.5.1",
+    "pg": "^8.6.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.6.2",
+    "sequelize-cli": "^6.2.0"
+  },
+  "devDependencies": {
+    "dotenv": "^10.0.0",
+    "nodemon": "^2.0.7"
+  }
+}
