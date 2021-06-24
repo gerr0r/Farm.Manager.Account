@@ -2,7 +2,7 @@ const { gql } = require('apollo-server')
 
 module.exports = gql`
   type Query {
-    getPending: [Account],
+    getPending: [Account]
     login(email: String, password: String): Login
   }
 

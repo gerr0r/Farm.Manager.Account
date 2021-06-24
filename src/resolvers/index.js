@@ -1,18 +1,6 @@
 const db = require('../db/models')
 const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-const SECRET = process.env.JWT_SECRET || 'superhiddensecret'
-
-function hasRights(token, accountRole) {
-    try {
-        const { id, role } = jwt.verify(token, SECRET)
-        if (role !== accountRole) return false
-        return id
-    } catch (error) {
-        console.log(error)
-        return false
-    }
-}
+const { createToken, hasRights } = require('../helpers/auth')
 
 module.exports = {
     Query: {
@@ -30,7 +18,7 @@ module.exports = {
             if (!validPassword) throw new Error("Wrong password")
             if (!account.active) throw new Error("Account is not active")
 
-            const token = jwt.sign({ id: account.id, role: account.role }, SECRET)
+            const token = createToken({ id: account.id, role: account.role })
 
             return {
                 token,
@@ -95,8 +83,8 @@ module.exports = {
     },
 
     Account: {
-        __resolveReference(account, { fetchAccountById }) {
-            return fetchAccountById(account.id)
+        async __resolveReference(account) {
+            return await db.Account.findByPk(account.id)
         }
     }
 }

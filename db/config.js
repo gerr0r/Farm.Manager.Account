@@ -1,5 +1,5 @@
 module.exports = {
-    database: process.env.POSTGRES_DATABASE || 'farm_manager_account_db',
+    database: process.env.POSTGRES_DATABASE || 'farm_manager',
     username: process.env.POSTGRES_USERNAME || 'postgres',
     password: process.env.POSTGRES_PASSWORD || '123',
     host: process.env.POSTGRES_HOST || 'localhost',
