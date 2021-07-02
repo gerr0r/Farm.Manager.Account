@@ -5,6 +5,16 @@ function createToken(payload) {
     return jwt.sign(payload, SECRET)
 }
 
+function verifyToken(token) {
+    try {
+        const decodedToken = jwt.verify(token, SECRET)
+        return decodedToken
+    } catch (error) {
+        console.log(error)
+        return false
+    }
+}
+
 function hasRights(token, accountRole) {
     try {
         const { id, role } = jwt.verify(token, SECRET)
@@ -18,5 +28,6 @@ function hasRights(token, accountRole) {
 
 module.exports = {
     createToken,
+    verifyToken,
     hasRights
 }
