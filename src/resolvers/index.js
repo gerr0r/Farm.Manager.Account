@@ -89,13 +89,14 @@ module.exports = {
       const { token } = context;
       if (!hasRights(token, "master")) throw new Error("Unauthorized");
 
-      await db.Account.update(
+      const account = await db.Account.update(
         { active: true },
         {
           where: { id: args.id },
+          returning: true,
         }
       );
-      return args.id;
+      return account[1][0].dataValues;
     },
 
     async deactivate(parent, args, context) {
@@ -103,13 +104,14 @@ module.exports = {
       const { token } = context;
       if (!hasRights(token, "master")) throw new Error("Unauthorized");
 
-      await db.Account.update(
+      const account = await db.Account.update(
         { active: false },
         {
           where: { id: args.id },
+          returning: true,
         }
       );
-      return args.id;
+      return account[1][0].dataValues;
     },
 
     async addUser(parent, args, context) {
@@ -139,6 +141,59 @@ module.exports = {
         if (error.parent.code === "23505")
           return "Registration failed: User already in use";
         return false;
+      }
+    },
+
+    async addAssignment(parent, args, context) {
+      // master only
+      const { token } = context;
+      if (!hasRights(token, "master")) throw new Error("Unauthorized");
+
+      const { accountId, countryCode } = args;
+      try {
+        const checkAssignment = await db.AccountCountry.findOne({
+          where: {
+            accountId, 
+            countryCode
+          }
+        })
+        if (checkAssignment) throw new Error("Country already assigned")
+        
+        const assignment = await db.AccountCountry.create({
+          accountId,
+          countryCode
+        });
+        return assignment
+      } catch (error) {
+        console.log(error);
+      }
+    },
+
+    async removeAssignment(parent, args, context) {
+      // master only
+      const { token } = context;
+      if (!hasRights(token, "master")) throw new Error("Unauthorized");
+
+      const { accountId, countryCode } = args;
+      try {
+        const checkAssignment = await db.AccountCountry.findOne({
+          where: {
+            accountId, 
+            countryCode
+          }
+        })
+        if (!checkAssignment) throw new Error("Assignment not found")
+
+        const assignment = await db.AccountCountry.destroy({
+          where: {
+            accountId, 
+            countryCode
+          }
+        });
+        return checkAssignment
+      } catch (error) {
+        console.log(error);
+        throw new Error(error.message)
       }
     },
   },

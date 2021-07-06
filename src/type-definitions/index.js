@@ -19,9 +19,11 @@ module.exports = gql`
 
   extend type Mutation {
     register(email: String, password: String): String
-    activate(id: ID!): ID
-    deactivate(id: ID!): ID
+    activate(id: ID!): Account
+    deactivate(id: ID!): Account
     addUser(email: String, password: String): String
+    addAssignment(accountId: ID!, countryCode: String!): AccountCountry
+    removeAssignment(accountId: ID!, countryCode: String!): AccountCountry
   }
 
   type Login {
