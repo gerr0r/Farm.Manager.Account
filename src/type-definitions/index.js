@@ -15,7 +15,7 @@ module.exports = gql`
     accountCountries(accountId: ID): [AccountCountry]
     inactiveAccounts: [Account]
     activeAccounts: [Account]
-    userFarms(accountId: ID!): [UserFarm]
+    userFarms(accountId: ID): [UserFarm]
     verify: Account
     login(email: String, password: String): Login
   }

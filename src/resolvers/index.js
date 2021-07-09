@@ -25,7 +25,6 @@ module.exports = {
       const { token } = context;
       const { accountId } = args
 
-      console.log(accountId);
       if (!accountId) {
         const adminId = hasRights(token, "admin");
         if (!adminId) throw new Error("Unauthorized");
@@ -42,15 +41,19 @@ module.exports = {
 
     async userFarms(parent, args, context) {
       const { token } = context;
-      const adminId = hasRights(token, "admin");
-      if (!adminId) throw new Error("Unauthorized");
+      let { accountId } = args
 
-      const { accountId } = args
+      if (!accountId) {
+        accountId = hasRights(token, "user") 
+        if (!accountId) throw new Error("Unauthorized");
+      } else {
+        const adminId = hasRights(token, "admin");
+        if (!adminId) throw new Error("Unauthorized");
 
-      // check admin rights over user account
-      const account = await db.Account.findOne({where: {id: accountId, admin_id: adminId}})
-      if (!account) throw new Error("Unauthorized");
-
+        // check admin rights over user account
+        const account = await db.Account.findOne({where: {id: accountId, admin_id: adminId}})
+        if (!account) throw new Error("Unauthorized");
+      }
 
       return await db.UserFarm.findAll({
         where: { accountId }
