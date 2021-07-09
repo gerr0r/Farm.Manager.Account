@@ -11,6 +11,52 @@ module.exports = {
       return decodedToken;
     },
 
+    async accountUsers(parent, args, context) {
+      const { token } = context;
+      const adminId = hasRights(token, "admin");
+      if (!adminId) throw new Error("Unauthorized");
+
+      return await db.Account.findAll({
+        where: { admin_id: adminId }
+      })
+    },
+
+    async accountCountries(parent, args, context) {
+      const { token } = context;
+      const { accountId } = args
+
+      console.log(accountId);
+      if (!accountId) {
+        const adminId = hasRights(token, "admin");
+        if (!adminId) throw new Error("Unauthorized");
+        return await db.AccountCountry.findAll({
+          where: { accountId: adminId }
+        })
+      } else {
+        if (!hasRights(token, "master")) throw new Error("Unauthorized");
+        return await db.AccountCountry.findAll({
+          where: { accountId }
+        })
+      }
+    },
+
+    async userFarms(parent, args, context) {
+      const { token } = context;
+      const adminId = hasRights(token, "admin");
+      if (!adminId) throw new Error("Unauthorized");
+
+      const { accountId } = args
+
+      // check admin rights over user account
+      const account = await db.Account.findOne({where: {id: accountId, admin_id: adminId}})
+      if (!account) throw new Error("Unauthorized");
+
+
+      return await db.UserFarm.findAll({
+        where: { accountId }
+      })
+    },
+
     async account(parent, args, context) {
       const { token } = context;
       if (!hasRights(token, "master")) throw new Error("Unauthorized");
@@ -45,6 +91,13 @@ module.exports = {
       );
       if (!validPassword) throw new Error("Wrong password");
       if (!account.active) throw new Error("Account is not active");
+
+      // final check: if account is user type and admin account is inactive
+      if (account.role === "user") {
+        const admin = await db.Account.findByPk(account.admin_id);
+        if (!admin) throw new Error("Account not found"); // avoid bugs
+        if (!admin.active) throw new Error("Owner account is not active");
+      }
 
       const token = createToken({
         id: account.id,
@@ -123,7 +176,7 @@ module.exports = {
       const password = await bcrypt.hash(args.password, 10);
       const transaction = await db.sequelize.transaction();
       try {
-        await db.Account.create(
+        const user = await db.Account.create(
           {
             email: args.email,
             password,
@@ -134,13 +187,13 @@ module.exports = {
           { transaction }
         );
         await transaction.commit();
-        return "User added to account.";
+        return user;
       } catch (error) {
         await transaction.rollback();
         console.error(error);
         if (error.parent.code === "23505")
-          return "Registration failed: User already in use";
-        return false;
+          throw new Error("Email already in use");
+        throw new Error("Something went wrong")
       }
     },
 
@@ -196,18 +249,49 @@ module.exports = {
         throw new Error(error.message)
       }
     },
+
+    async setFarmAccess(parent, args, context) {
+      const { token } = context;
+      const adminId = hasRights(token, "admin");
+      if (!adminId) throw new Error("Unauthorized");
+
+      const { accountId, farmId } = args
+      // check admin rights over user account
+      const account = await db.Account.findOne({where: {id: accountId, admin_id: adminId}})
+      if (!account) throw new Error("Unauthorized");
+
+      // TODO: Find a way to check admin rights over farm
+
+      try {
+        const checkAccess = await db.UserFarm.findOne({
+          where: {
+            accountId, 
+            farmId
+          }
+        })
+        if (checkAccess) throw new Error("Access already set")
+        
+        return await db.UserFarm.create({
+          accountId,
+          farmId
+        });
+      } catch (error) {
+        console.log(error);
+        throw new Error(error.message)
+      }
+
+    }
   },
 
   Account: {
     async __resolveReference(account) {
       return await db.Account.findByPk(account.id);
     },
-    async countries(account) {
-      return await db.AccountCountry.findAll({
-        where: { accountId: account.id },
-        // attributes: ["id", "accountId", ["countryCode", "code"]],
-      });
-    },
+    // async countries(account) {
+    //   return await db.AccountCountry.findAll({
+    //     where: { accountId: account.id },
+    //   });
+    // },
   },
 
   AccountCountry: {
@@ -218,4 +302,19 @@ module.exports = {
       return { __typename: "Country", code: accountCountry.countryCode };
     },
   },
+
+  User: {
+    async __resolveReference(account) {
+      return await db.Account.findByPk(account.id);
+    },
+  },
+
+  UserFarm: {
+    async __resolveReference(userFarm) {
+      return await db.UserFarm.findByPk(userFarm.id);
+    },
+    farm(userFarm) {
+      return { __typename: "Farm", id: userFarm.farmId };
+    },
+  }
 };

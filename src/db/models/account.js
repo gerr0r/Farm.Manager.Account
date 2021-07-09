@@ -6,7 +6,11 @@ module.exports = (sequelize, DataTypes) => {
       this.hasMany(models.AccountCountry, {
         sourceKey: "id",
         foreignKey: "accountId",
-      });
+      }),
+      this.hasMany(models.UserFarm, {
+        sourceKey: "id",
+        foreignKey: "accountId",
+      })
     }
   }
   
